@@ -1,13 +1,12 @@
 import os
 import random
-import datetime
 
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as ec
 
 
 class TestRegistrationForm:
@@ -30,6 +29,10 @@ class TestRegistrationForm:
     SUBMIT_BUTTON = (By.ID, 'submit')
     RESULT_FORM = (By.ID, 'resultBody')
     POPUP_CLOSE = (By.CSS_SELECTOR, 'button[aria-label="Close"]')
+    STATUS_MESSAGE = (By.ID, 'formError')
+    ERROR_MESSAGE_MOBILE = 'Please fill required fields and enter a valid 10-digit mobile number.'
+    ERROR_MESSAGE_NAME = 'Please fill required fields and enter a valid First Name.'
+    ERROR_MESSAGE_GENDER = 'Please fill required fields and enter a valid Gender'
 
     def set_up(self):
         self.driver = webdriver.Chrome()
@@ -69,7 +72,7 @@ class TestRegistrationForm:
         for subject in subjects:
             self.driver.find_element(*self.SUBJECTS_INPUT).send_keys(subject)
             WebDriverWait(self.driver, 5).until(
-                EC.visibility_of_element_located((By.CLASS_NAME, 'subjects-auto-complete__option'))
+                ec.visibility_of_element_located((By.CLASS_NAME, 'subjects-auto-complete__option'))
             ).click()
 
     def select_hobbies(self, *hobbies):
@@ -90,7 +93,7 @@ class TestRegistrationForm:
         self.driver.execute_script('arguments[0].scrollIntoView();', element)
         element.click()
         WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_element_located((By.CLASS_NAME, options_class))
+            ec.visibility_of_element_located((By.CLASS_NAME, options_class))
         )
         options = self.driver.find_elements(By.CLASS_NAME, options_class)
         for option in options:
@@ -113,10 +116,24 @@ class TestRegistrationForm:
         element.click()
 
     def get_result_text(self):
-        return self.driver.find_element(*self.RESULT_FORM).text
+        return WebDriverWait(self.driver, 5).until(
+            ec.visibility_of_element_located(self.RESULT_FORM)
+        ).text
 
     def close_popup(self):
         self.driver.find_element(*self.POPUP_CLOSE).click()
+
+    def wait_for_status_message(self, text):
+        return WebDriverWait(
+            self.driver,
+            timeout=5,
+            poll_frequency=0.5
+        ).until(
+            ec.text_to_be_present_in_element(
+                self.STATUS_MESSAGE,
+                text
+            )
+        )
 
     def test_registration_with_required_fields(self):
         first_name = 'Gena'
@@ -234,6 +251,66 @@ class TestRegistrationForm:
 
             failed = [key for key, value in checks.items() if not value]
             assert not failed, f'Не прошли проверки: {failed}'
+
+        finally:
+            self.tear_down()
+
+    def test_registration_without_mobile_number(self):
+        first_name = 'Matvei'
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = ''
+
+        try:
+            self.set_up()
+            self.close_popup()
+            self.input_first_name(first_name)
+            self.input_last_name(last_name)
+            self.select_gender(gender)
+            self.input_mobile_number(mobile)
+            self.click_button()
+
+            assert self.wait_for_status_message(self.ERROR_MESSAGE_MOBILE), "БАГ: неверное сообщение об ошибке"
+
+        finally:
+            self.tear_down()
+
+    def test_registration_without_first_name(self):
+        first_name = ''
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = str(random.randint(1000000000, 9999999999))
+
+        try:
+            self.set_up()
+            self.close_popup()
+            self.input_first_name(first_name)
+            self.input_last_name(last_name)
+            self.select_gender(gender)
+            self.input_mobile_number(mobile)
+            self.click_button()
+
+            assert self.wait_for_status_message(self.ERROR_MESSAGE_NAME), "БАГ: неверное сообщение об ошибке"
+
+        finally:
+            self.tear_down()
+
+    def test_registration_without_gender(self):
+        first_name = ''
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = str(random.randint(1000000000, 9999999999))
+
+        try:
+            self.set_up()
+            self.close_popup()
+            self.input_first_name(first_name)
+            self.input_last_name(last_name)
+            self.select_gender(gender)
+            self.input_mobile_number(mobile)
+            self.click_button()
+
+            assert self.wait_for_status_message(self.ERROR_MESSAGE_GENDER), "БАГ: неверное сообщение об ошибке"
 
         finally:
             self.tear_down()
