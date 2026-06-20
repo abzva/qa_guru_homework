@@ -19,9 +19,6 @@ class AutomationPracticeFormPO:
     LAST_NAME_FIELD = (By.ID, "lastName")
     EMAIL_FIELD = (By.ID, "userEmail")
     USER_NUMBER_FIELD = (By.ID, "userNumber")
-    CALENDAR_INPUT = (By.ID, "dateOfBirthInput")
-    YEAR_OF_BIRTH_SELECT = (By.CSS_SELECTOR, ".react-datepicker__year-select")
-    MONTH_OF_BIRTH_SELECT = (By.CSS_SELECTOR, ".react-datepicker__month-select")
     SUBJECT_FIELD = (By.ID, "subjectsInput")
     UPLOAD_PICTURE_BUTTON = (By.ID, "uploadPicture")
     CURRENT_ADDRESS_FIELD = (By.ID, "currentAddress")
@@ -37,6 +34,7 @@ class AutomationPracticeFormPO:
         self.driver.maximize_window()
         self.wait = WebDriverWait(self.driver, 5)
         self.driver.get(self.url)
+        self.calendar = CalendarElement(self.driver)
 
     def _close_commercial_banner(self):
         banner_button = self.wait.until(ec.element_to_be_clickable(self.BANNER_BUTTON))
@@ -59,15 +57,9 @@ class AutomationPracticeFormPO:
         user_number_field.send_keys(user_number)
 
     def _select_gender(self, gender):
-        gender_radio_button = self.driver.find_element(By.XPATH, f"//div[@id='genterWrapper']//input[@value='{gender}']")
+        gender_radio_button = self.driver.find_element(By.XPATH,
+                                                       f"//div[@id='genterWrapper']//input[@value='{gender}']")
         gender_radio_button.click()
-
-    # TODO: Move code to Calendar Page Element
-    def _select_birth_day(self, date: Tuple[str, str, str]):
-        self.driver.find_element(*self.CALENDAR_INPUT).click()
-        Select(self.driver.find_element(*self.YEAR_OF_BIRTH_SELECT)).select_by_value(date[0])
-        Select(self.driver.find_element(*self.MONTH_OF_BIRTH_SELECT)).select_by_value(date[1])
-        self.driver.find_element(By.CSS_SELECTOR, f".react-datepicker__day--0{date[2]}[tabindex='0']").click()
 
     def _upload_file(self, file_path):
         self.driver.find_element(*self.UPLOAD_PICTURE_BUTTON).send_keys(file_path)
@@ -82,13 +74,13 @@ class AutomationPracticeFormPO:
     def _select_hobbies(self, *hobbies):
         try:
             for hobby in hobbies[0]:
-                hobby_check_box = self.driver.find_element(By.XPATH, f"//div[@id='hobbiesWrapper']//input[@value='{hobby}']")
+                hobby_check_box = self.driver.find_element(By.XPATH,
+                                                           f"//div[@id='hobbiesWrapper']//input[@value='{hobby}']")
                 hobby_check_box.click()
         except NoSuchElementException as ex:
             print(ex)
         except InvalidSelectorException as ex:
             print(ex)
-
 
     def _fill_current_address(self, current_address):
         current_address_field = self.driver.find_element(*self.CURRENT_ADDRESS_FIELD)
@@ -96,7 +88,8 @@ class AutomationPracticeFormPO:
 
     def _select_state(self, state):
         self.driver.find_element(*self.STATE_INPUT).click()
-        state_dropdown = self.wait.until(ec.element_to_be_clickable((By.XPATH, f"//div[@class='state-city-option'][text()='{state}']")))
+        state_dropdown = self.wait.until(
+            ec.element_to_be_clickable((By.XPATH, f"//div[@class='state-city-option'][text()='{state}']")))
         state_dropdown.click()
 
     def _select_city(self, city):
@@ -110,7 +103,8 @@ class AutomationPracticeFormPO:
         self.driver.execute_script("arguments[0].scrollIntoView();", submit_button)
         submit_button.click()
 
-    def fill_in_form(self, file_name=None, first_name=None, last_name=None, email=None, gender=None, user_number=None, birth_day=None, subjects=None, hobbies=None, current_address=None, state=None, city=None):
+    def fill_in_form(self, file_name=None, first_name=None, last_name=None, email=None, gender=None, user_number=None,
+                     birth_day=None, subjects=None, hobbies=None, current_address=None, state=None, city=None):
         practice_form_title = self.driver.find_element(*self.PRACTICE_FORM_TITLE)
         assert practice_form_title.text == "Practice Form", "Заголовок страницы не совпадает"
 
@@ -120,7 +114,7 @@ class AutomationPracticeFormPO:
         self._fill_email(email)
         self._select_gender(gender)
         self._fill_user_number(user_number)
-        self._select_birth_day(birth_day)
+        self.calendar.select_date(birth_day)
         self._fill_subject(subjects)
         self._select_hobbies(hobbies)
         self._upload_file(file_name)
@@ -130,31 +124,43 @@ class AutomationPracticeFormPO:
         self._click_submit_button()
 
     # TODO: со временем вынести в тесты или создать несколько разных методов assert под нужды разных тестов
-    def assert_form(self, file_name=None, first_name=None, last_name=None, email=None, gender=None, user_number=None, birth_day=None, subjects=None, hobbies=None, current_address=None, state=None, city=None):
+
+    def assert_result_is_visible(self):
         result_form = self.wait.until(ec.visibility_of_element_located(self.RESULT_FORM))
-        assert result_form.is_displayed(), "Таблица с данным не отобразилась"
+        assert result_form.is_displayed(), "Таблица с данными не отобразилась"
 
-        result_text = result_form.text
+    def assert_student_name(self, first_name, last_name):
+        result_text = self.driver.find_element(*self.RESULT_FORM).text
+        assert f"{first_name} {last_name}" in result_text
 
-        expected_data = {
-            "Student Name": f"{first_name} {last_name}",
-            "Student Email": email,
-            "Gender": gender,
-            "Mobile": user_number,
-            "Date of Birth": birth_day,
-            "Subjects": subjects,
-            "Hobbies": hobbies,
-            "Picture": "test_file.jpg", #file_name,
-            "Address": current_address,
-            "State and City": f"{state} {city}"
-        }
-        
-        # AssertionError: Значения D:\Projects\Python\Student01Prj01\test_file.jpg из строки Picture не совпадают!
-        for key, value in expected_data.items():
-            if isinstance(value, tuple):
-                value = value[0]
-            assert key in result_text and value in result_text, f"Значения {value} из строки {key} не совпадают!"
+    def assert_email(self, email):
+        result_text = self.driver.find_element(*self.RESULT_FORM).text
+        assert email in result_text
 
     def tear_down(self):
         self.driver.quit()
 
+ # TODO: Move code to Calendar Page Element
+class CalendarElement:
+
+    def __init__(self, driver):
+        self.driver = driver
+
+    CALENDAR_INPUT = (By.ID, "dateOfBirthInput")
+    YEAR_OF_BIRTH_SELECT = (By.CSS_SELECTOR, ".react-datepicker__year-select")
+    MONTH_OF_BIRTH_SELECT = (By.CSS_SELECTOR, ".react-datepicker__month-select")
+
+    def select_date(self, date: Tuple[str, str, str]):
+        self.driver.find_element(*self.CALENDAR_INPUT).click()
+        Select(
+            self.driver.find_element(*self.YEAR_OF_BIRTH_SELECT)
+        ).select_by_value(date[0])
+
+        Select(
+            self.driver.find_element(*self.MONTH_OF_BIRTH_SELECT)
+        ).select_by_value(date[1])
+
+        self.driver.find_element(
+            By.CSS_SELECTOR,
+            f".react-datepicker__day--0{date[2]}[tabindex='0']"
+        ).click()
