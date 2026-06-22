@@ -64,7 +64,7 @@ class TextBoxPage:
         # Проверяем наличие класса ошибки у поля Email
         email_field = self.driver.find_element(*self.EMAIL)
         field_class = email_field.get_attribute("class")
-        # TypeError: argument of type 'NoneType' is not a container or iterable
-        # TODO: как нужно обновить - исправить проверку?
-        return "field-error" in field_class or "error" in field_class or False
-
+        if field_class is not None:
+            return "field-error" in field_class or "error" in field_class or False
+        else:
+            return False
