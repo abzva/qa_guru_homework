@@ -1,37 +1,38 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from seleniumpagefactory.Pagefactory import PageFactory
 
 
-class LoginFormPage:
+class LoginFormPage(PageFactory):
+
     def __init__(self, driver):
         self.driver = driver
+        self.locators = {
+            "login_input": ("ID", 'login-input'),
+            "password_input": ("ID", 'password-input'),
+            "submit_button": ("ID", 'submit-button')
+        }
+
+    STATUS_MESSAGE_LOCATOR = (By.ID, 'error-message')
+    error_wrong_credentials = 'Wrong login or password'
+    error_short_password = 'Password must be at least 6 characters'
+    error_password_required = 'Password is required (minimum 6 characters)'
+    error_short_login = 'Login is required (minimum 3 characters)'
 
     URL = 'https://qa-guru.github.io/one-page-form/login.html'
 
     def open(self):
         self.driver.get(self.URL)
 
-    LOGIN_INPUT = (By.ID, 'login-input')
-    PASSWORD_INPUT = (By.ID, 'password-input')
-    SUBMIT_BUTTON = (By.ID, 'submit-button')
-    STATUS_MESSAGE = (By.ID, 'error-message')
-    ERROR_WRONG_CREDENTIALS = 'Wrong login or password'
-    ERROR_SHORT_PASSWORD = 'Password must be at least 6 characters'
-    ERROR_PASSWORD_REQUIRED = 'Password is required (minimum 6 characters)'
-    ERROR_SHORT_LOGIN = 'Login is required (minimum 3 characters)'
-
     def input_login_form(self, login):
-        input_login = self.driver.find_element(*self.LOGIN_INPUT)
-        input_login.send_keys(login)
+        self.login_input.send_keys(login)
 
     def input_password_form(self, password):
-        input_password = self.driver.find_element(*self.PASSWORD_INPUT)
-        input_password.send_keys(password)
+        self.password_input.send_keys(password)
 
     def click_button(self):
-        submit_button = self.driver.find_element(*self.SUBMIT_BUTTON)
-        submit_button.click()
+        self.submit_button.click()
 
     def wait_for_status_message(self, text):
         return WebDriverWait(
@@ -40,7 +41,7 @@ class LoginFormPage:
             poll_frequency=0.5
         ).until(
             ec.text_to_be_present_in_element(
-                self.STATUS_MESSAGE,
+                self.STATUS_MESSAGE_LOCATOR,
                 text
             )
         )
