@@ -1,0 +1,172 @@
+import random
+
+from datetime import datetime
+from pages.registration_form_page import RegistrationFormPage
+
+
+class TestRegistrationForm:
+
+    def test_registration_with_required_fields(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = 'Gena'
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = str(random.randint(7900000000, 7999999999))
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.select_gender(gender)
+        page.input_mobile_number(mobile)
+        page.click_button()
+
+        result = page.get_result_text()
+
+        checks = {
+            'first_name': first_name in result,
+            'last_name': last_name in result,
+            'gender': gender in result,
+            'mobile': mobile in result,
+        }
+
+        failed = [key for key, value in checks.items() if not value]
+        assert not failed, f'Не прошли проверки: {failed}'
+
+    def test_registration_form_with_all_fields(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = 'Galina'
+        last_name = 'Bondar'
+        email = 'example@mail.com'
+        gender = 'Female'
+        mobile = str(random.randint(7900000000, 7999999999))
+        day = 3
+        month = 'November'
+        year = '2000'
+        date_of_birth = datetime.strptime(f'{day} {month} {year}', '%d %B %Y').strftime('%d %b %Y')
+        subjects = 'Maths', 'English', 'Physics'
+        hobbies = 'Sports', 'Reading'
+        picture = 'file.pages'
+        address = 'г. Санкт-Петербург Невский пр-кт'
+        state = 'NCR'
+        city = 'Delhi'
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.input_email(email)
+        page.select_gender(gender)
+        page.input_mobile_number(mobile)
+        page.calendar.select_date_of_birth(day, month, year)
+        page.select_subjects(*subjects)
+        page.select_hobbies(*hobbies)
+        page.upload_picture(f'../resources/{picture}')
+        page.input_current_address(address)
+        page.select_state(state)
+        page.select_city(city)
+        page.click_button()
+
+        result = page.get_result_text()
+
+        checks = {
+            'first_name': first_name in result,
+            'last_name': last_name in result,
+            'email': email in result,
+            'gender': gender in result,
+            'mobile': mobile in result,
+            'date_of_birth': date_of_birth in result,
+            'subjects': all(s in result for s in subjects),
+            'picture': picture in result,
+            'address': address in result,
+            'state': state in result,
+            'city': city in result,
+        }
+
+        failed = [key for key, value in checks.items() if not value]
+        assert not failed, f'Не прошли проверки: {failed}'
+
+    def test_clear_first_name_field(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = 'Gena'
+        new_first_name = 'Mark'
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = str(random.randint(7900000000, 7999999999))
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.select_gender(gender)
+        page.input_mobile_number(mobile)
+        page.clear_first_name()
+        page.input_first_name(new_first_name)
+        page.click_button()
+
+        result = page.get_result_text()
+
+        checks = {
+            'first_name': new_first_name in result,
+            'last_name': last_name in result,
+            'gender': gender in result,
+            'mobile': mobile in result,
+        }
+
+        failed = [key for key, value in checks.items() if not value]
+        assert not failed, f'Не прошли проверки: {failed}'
+
+    def test_registration_without_mobile_number(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = 'Matvei'
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = ''
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.select_gender(gender)
+        page.input_mobile_number(mobile)
+        page.click_button()
+
+        assert page.wait_for_status_message(page.ERROR_MESSAGE_MOBILE), "БАГ: неверное сообщение об ошибке"
+
+    def test_registration_without_first_name(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = ''
+        last_name = 'Litvin'
+        gender = 'Female'
+        mobile = str(random.randint(7900000000, 7999999999))
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.select_gender(gender)
+        page.input_mobile_number(mobile)
+        page.click_button()
+
+        assert page.wait_for_status_message(page.ERROR_MESSAGE_NAME), "БАГ: неверное сообщение об ошибке"
+
+    def test_registration_without_gender(self, driver):
+        page = RegistrationFormPage(driver)
+        page.open()
+
+        first_name = ''
+        last_name = 'Litvin'
+        mobile = str(random.randint(7900000000, 7999999999))
+
+        page.close_popup()
+        page.input_first_name(first_name)
+        page.input_last_name(last_name)
+        page.input_mobile_number(mobile)
+        page.click_button()
+
+        assert page.wait_for_status_message(page.ERROR_MESSAGE_GENDER), "БАГ: неверное сообщение об ошибке"

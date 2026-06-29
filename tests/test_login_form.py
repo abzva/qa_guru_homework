@@ -1,4 +1,4 @@
-from login_form_page import LoginFormPage
+from pages.login_form_page import LoginFormPage
 
 
 class TestLoginForm:
@@ -14,7 +14,7 @@ class TestLoginForm:
         page.input_password_form(password)
         page.click_button()
 
-        assert page.wait_for_status_message(page.ERROR_SHORT_PASSWORD)
+        assert page.wait_for_status_message(page.error_short_password)
 
     def test_empty_password(self, driver):
         page = LoginFormPage(driver)
@@ -27,7 +27,7 @@ class TestLoginForm:
         page.input_password_form(password)
         page.click_button()
 
-        assert page.wait_for_status_message(page.ERROR_PASSWORD_REQUIRED)
+        assert page.wait_for_status_message(page.error_password_required)
 
     def test_invalid_login(self, driver):
         page = LoginFormPage(driver)
@@ -39,9 +39,9 @@ class TestLoginForm:
         page.input_password_form(password)
         page.click_button()
 
-        assert page.wait_for_status_message(page.ERROR_WRONG_CREDENTIALS)
+        assert page.wait_for_status_message(page.error_wrong_credentials)
 
-    def test_empty_login(self,driver):
+    def test_empty_login(self, driver):
         page = LoginFormPage(driver)
         page.open()
         login = ''
@@ -51,4 +51,4 @@ class TestLoginForm:
         page.input_password_form(password)
         page.click_button()
 
-        assert page.wait_for_status_message(page.ERROR_SHORT_LOGIN)
+        assert page.wait_for_status_message(page.error_short_login)
