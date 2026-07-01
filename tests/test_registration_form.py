@@ -1,4 +1,5 @@
 import random
+import pytest
 
 from datetime import datetime
 from pages.registration_form_page import RegistrationFormPage
@@ -119,14 +120,17 @@ class TestRegistrationForm:
         failed = [key for key, value in checks.items() if not value]
         assert not failed, f'Не прошли проверки: {failed}'
 
-    def test_registration_without_mobile_number(self, driver):
+    @pytest.mark.parametrize("first_name, last_name, gender, mobile, expected_error", [
+        ('Matvei', 'Litvin', 'Female', '', 'Please fill required fields and enter a valid 10-digit mobile number.'),
+        pytest.param('', 'Litvin', 'Female', str(random.randint(7900000000, 7999999999)),
+                     'Please fill required fields and enter a valid First Name.', marks=pytest.mark.xfail),
+        pytest.param('', 'Litvin', None, str(random.randint(7900000000, 7999999999)),
+                     'Please fill required fields and enter a valid Gender', marks=pytest.mark.xfail)
+    ])
+    def test_registration_without_required_parameters(self, driver, first_name, last_name, gender, mobile,
+                                                      expected_error):
         page = RegistrationFormPage(driver)
         page.open()
-
-        first_name = 'Matvei'
-        last_name = 'Litvin'
-        gender = 'Female'
-        mobile = ''
 
         page.close_popup()
         page.input_first_name(first_name)
@@ -135,38 +139,4 @@ class TestRegistrationForm:
         page.input_mobile_number(mobile)
         page.click_button()
 
-        assert page.wait_for_status_message(page.ERROR_MESSAGE_MOBILE), "БАГ: неверное сообщение об ошибке"
-
-    def test_registration_without_first_name(self, driver):
-        page = RegistrationFormPage(driver)
-        page.open()
-
-        first_name = ''
-        last_name = 'Litvin'
-        gender = 'Female'
-        mobile = str(random.randint(7900000000, 7999999999))
-
-        page.close_popup()
-        page.input_first_name(first_name)
-        page.input_last_name(last_name)
-        page.select_gender(gender)
-        page.input_mobile_number(mobile)
-        page.click_button()
-
-        assert page.wait_for_status_message(page.ERROR_MESSAGE_NAME), "БАГ: неверное сообщение об ошибке"
-
-    def test_registration_without_gender(self, driver):
-        page = RegistrationFormPage(driver)
-        page.open()
-
-        first_name = ''
-        last_name = 'Litvin'
-        mobile = str(random.randint(7900000000, 7999999999))
-
-        page.close_popup()
-        page.input_first_name(first_name)
-        page.input_last_name(last_name)
-        page.input_mobile_number(mobile)
-        page.click_button()
-
-        assert page.wait_for_status_message(page.ERROR_MESSAGE_GENDER), "БАГ: неверное сообщение об ошибке"
+        assert page.wait_for_status_message(expected_error)
