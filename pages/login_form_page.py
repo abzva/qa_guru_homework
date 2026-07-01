@@ -15,10 +15,6 @@ class LoginFormPage(PageFactory):
         }
 
     STATUS_MESSAGE_LOCATOR = (By.ID, 'error-message')
-    error_wrong_credentials = 'Wrong login or password'
-    error_short_password = 'Password must be at least 6 characters'
-    error_password_required = 'Password is required (minimum 6 characters)'
-    error_short_login = 'Login is required (minimum 3 characters)'
 
     URL = 'https://qa-guru.github.io/one-page-form/login.html'
 
