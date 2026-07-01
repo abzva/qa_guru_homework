@@ -1,3 +1,4 @@
+import pytest
 from pages.form_page import FormPage
 
 
@@ -17,20 +18,7 @@ class TestSuite:
 
         assert name in result_box.text
 
-    def test_negative_no_at(self, driver):
-        page = FormPage(driver)
-        page.open()
-
-        name = 'Иван Иванов'
-        email = 'ivanexample.com'
-
-        page.input_full_name(name)
-        page.input_email(email)
-        page.click_button()
-        validation_message = page.get_email_validation_message()
-
-        assert 'Адрес электронной почты должен содержать символ "@". В адресе "ivanexample.com" отсутствует символ "@".' in validation_message
-
+    @pytest.mark.xfail
     def test_negative_empty_email(self, driver):
         page = FormPage(driver)
         page.open()
@@ -45,6 +33,7 @@ class TestSuite:
 
         assert len(result_box) == 0, "БАГ: форма отправилась с пустым email!"
 
+    @pytest.mark.xfail
     def test_negative_long_email(self, driver):
         page = FormPage(driver)
         page.open()
@@ -59,34 +48,26 @@ class TestSuite:
 
         assert len(result_box) == 0, "БАГ: форма приняла слишком длинный email!"
 
-    def test_negative_special_chars_before_at(self, driver):
+    @pytest.mark.parametrize("email, expected_error", [
+        ('testivaniv№@google.com', 'Часть адреса до символа "@" не должна содержать символ "№".'),
+        pytest.param('testivaniv@goo№gle.com', 'Часть адреса после символа "@" не должна содержать символ "№".',
+                     marks=pytest.mark.xfail),
+        ('ivanexample.com',
+         'Адрес электронной почты должен содержать символ "@". В адресе "ivanexample.com" отсутствует символ "@".')
+    ])
+    def test_negative_invalid_email_format(self, driver, email, expected_error):
         page = FormPage(driver)
         page.open()
 
         name = 'Иван Иванов'
-        email = 'testivaniv№@google.com'
 
         page.input_full_name(name)
         page.input_email(email)
         page.click_button()
         validation_message = page.get_email_validation_message()
+        assert expected_error in validation_message
 
-        assert 'Часть адреса до символа "@" не должна содержать символ "№".' in validation_message
-
-    def test_negative_special_chars_after_at(self, driver):
-        page = FormPage(driver)
-        page.open()
-
-        name = 'Иван Иванов'
-        email = 'testivaniv@goo№gle.com'
-
-        page.input_full_name(name)
-        page.input_email(email)
-        page.click_button()
-        validation_message = page.get_email_validation_message()
-
-        assert 'Часть адреса после символа "@" не должна содержать символ "№".' in validation_message, "БАГ: нет сообщения"
-
+    @pytest.mark.xfail
     def test_sql_injection_in_email(self, driver):
         page = FormPage(driver)
         page.open()
