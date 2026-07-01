@@ -27,9 +27,6 @@ class RegistrationFormPage:
     RESULT_FORM = (By.ID, 'resultBody')
     POPUP_CLOSE = (By.CSS_SELECTOR, 'button[aria-label="Close"]')
     STATUS_MESSAGE = (By.ID, 'formError')
-    # ERROR_MESSAGE_MOBILE = 'Please fill required fields and enter a valid 10-digit mobile number.'
-    # ERROR_MESSAGE_NAME = 'Please fill required fields and enter a valid First Name.'
-    ERROR_MESSAGE_GENDER = 'Please fill required fields and enter a valid Gender'
 
     URL = 'https://qa-guru.github.io/one-page-form/automation-practice-form.html'
 

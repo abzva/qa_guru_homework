@@ -120,7 +120,7 @@ class TestRegistrationForm:
         failed = [key for key, value in checks.items() if not value]
         assert not failed, f'Не прошли проверки: {failed}'
 
-    @pytest.mark.parametrize("first_name, last_name, gender, mobile,expected_error", [
+    @pytest.mark.parametrize("first_name, last_name, gender, mobile, expected_error", [
         ('Matvei', 'Litvin', 'Female', '', 'Please fill required fields and enter a valid 10-digit mobile number.'),
         pytest.param('', 'Litvin', 'Female', str(random.randint(7900000000, 7999999999)),
                      'Please fill required fields and enter a valid First Name.', marks=pytest.mark.xfail),
